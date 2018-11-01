@@ -53,7 +53,7 @@ int main(int argc, char* argv[])
         tree.insert(&n);
         tree.insert(&o);
 
-        tree.deleteB(&o);
+        //tree.deleteB(&o);
 
         tree.search(&a);
         tree.search(&b);

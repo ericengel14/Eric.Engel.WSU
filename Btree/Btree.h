@@ -38,7 +38,7 @@ public:
 
         int checkEmpty();
         void deleteLeaf(T *deletion);
-        typename list<Key>::iterator findMatch(T *search);
+        Key* findMatch(T *search);
         int isMatch(T *search);
         int getMax() {return max;};
         Node* traverseLevel(T *add);
@@ -66,6 +66,8 @@ public:
         
         int (*compareFunction)(T*,T*);
 
+        void setTemp(typename Node<T>::Key *keyD);
+        void swap(typename Node<T>::Key *keyD, typename Node<T>::Key *keyS, T *deletion);
         typename Node<T>::Key* successor(Node<T> *node, T *deletion);
         void theft();
         bool caseJoint(Node<T> *node);
@@ -170,7 +172,7 @@ int Node<T>::isMatch(T *search)
 
 //Function to look for element inside Node and return an iterator to the found item
 template <typename T>
-typename list<typename Node<T>::Key>::iterator Node<T>::findMatch(T *search)
+typename Node<T>::Key* Node<T>::findMatch(T *search)
 {
         int compare = 1;
         for(it1 = first.begin(); it1 != first.end(); ++it1)
@@ -178,10 +180,10 @@ typename list<typename Node<T>::Key>::iterator Node<T>::findMatch(T *search)
                 compare = compareFunc(search, &(*it1).data);
                 if(compare == 0)
                 {
-                        return it1;
+                        return &(*it1);
                 }
         }
-        return it1;
+        return &(*it1);
 }
 
 //Function to search for an element in the Btree
@@ -522,8 +524,9 @@ int Node<T>::checkEmpty()
 template <typename T>
 typename Node<T>::Key* Btree<T>::successor(Node<T> *node,T *deletion)
 {
-        node->it1 = node->findMatch(deletion);
-        node = (*node->it1).rChild;
+        typename Node<T>::Key *key;
+        key = node->findMatch(deletion);
+        node = key->rChild;
         while(node->lChild != NULL)
         {
                 node = node->lChild;
@@ -532,12 +535,43 @@ typename Node<T>::Key* Btree<T>::successor(Node<T> *node,T *deletion)
         return &(*node->it1);
 }
 
+//Function to swap element to be deleted and its immediate successor and then call function to delete element
+template <typename T>
+void Btree<T>::swap(typename Node<T>::Key *keyD, typename Node<T>::Key *keyS, T *deletion)
+{
+        T tempD;
+        Node<T>* tempN;
+        tempD = keyD->data;
+        tempN = keyD->rChild;
+        keyD->data = keyS->data;
+        keyD->rChild = keyS->rChild;
+        keyS->data = tempD;
+        keyS->rChild = tempN;
+        
+        temporary->deleteLeaf(deletion);
+        checkMin(temporary);
+        //call function to check if node is not full enough checkMin
+}
+
+//Function to set immediate to point at node containing immediate successor
+template <typename T>
+void Btree<T>::setTemp(typename Node<T>::Key *key)
+{
+        Node<T> *node;
+        node = key->rChild;
+        while(node->lChild != NULL)
+        {
+                node = node->lChild;
+        }
+        temporary = node;
+}
+
 //Function to delete item from Btree
 template <typename T>
 void Btree<T>::deleteB(T *deletion)
 {
         int isEmpty = 0;
-        Node<T> *node;
+        typename Node<T>::Key *keyD;
         typename Node<T>::Key *keyS;
 
         search(deletion);
@@ -550,8 +584,9 @@ void Btree<T>::deleteB(T *deletion)
         else 
         {
                 keyS = successor(temporary, deletion);          //functions to find immediate successor
-                //function to swap immediate successor and item to be deleted
-                //delete item now moved to leaf node
+                keyD = temporary->findMatch(deletion);          //Saving item to be deleted to a Key*      
+                setTemp(keyD); //set temporary to point at node containing immediate successor 
+                swap(keyD, keyS, deletion);                       //function to swap immediate successor and item to be deleted
         }
 }
 
