@@ -446,9 +446,11 @@ template <typename T>
 void Node<T>::deleteLeaf(T *deletion)
 {
         int compare = 1;
-        for(it1 = first.begin(); it1 != first.end(); ++it1)
+        for(it1 = first.begin(); it1 != first.end(); it1++)
         {
+                cout << "Deleting Leaf" << endl;
                 compare = compareFunc(deletion, &(*it1).data);
+                cout << "it1.data = " << (*it1).data << endl;
                 if(compare == 0)
                 {
                         first.erase(it1);
@@ -540,17 +542,12 @@ template <typename T>
 void Btree<T>::swap(typename Node<T>::Key *keyD, typename Node<T>::Key *keyS, T *deletion)
 {
         T tempD;
-        Node<T>* tempN;
-        tempD = keyD->data;
-        tempN = keyD->rChild;
-        keyD->data = keyS->data;
-        keyD->rChild = keyS->rChild;
-        keyS->data = tempD;
-        keyS->rChild = tempN;
+        tempD = keyS->data;
+        keyS->data = keyD->data;
+        keyD->data = tempD;
         
         temporary->deleteLeaf(deletion);
-        checkMin(temporary);
-        //call function to check if node is not full enough checkMin
+        checkMin(temporary);                    //call function to check if node is not full enough checkMin
 }
 
 //Function to set immediate to point at node containing immediate successor
