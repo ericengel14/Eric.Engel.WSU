@@ -38,6 +38,7 @@ public:
 
         int checkEmpty();
         void deleteLeaf(T *deletion);
+        typename list<Key>::iterator findMatch(T *search);
         int isMatch(T *search);
         int getMax() {return max;};
         Node* traverseLevel(T *add);
@@ -65,6 +66,7 @@ public:
         
         int (*compareFunction)(T*,T*);
 
+        typename Node<T>::Key* successor(Node<T> *node, T *deletion);
         void theft();
         bool caseJoint(Node<T> *node);
         void checkMin(Node<T> *temp);
@@ -164,6 +166,22 @@ int Node<T>::isMatch(T *search)
         }
         cout << endl;
         return compare;
+}
+
+//Function to look for element inside Node and return an iterator to the found item
+template <typename T>
+typename list<typename Node<T>::Key>::iterator Node<T>::findMatch(T *search)
+{
+        int compare = 1;
+        for(it1 = first.begin(); it1 != first.end(); ++it1)
+        {
+                compare = compareFunc(search, &(*it1).data);
+                if(compare == 0)
+                {
+                        return it1;
+                }
+        }
+        return it1;
 }
 
 //Function to search for an element in the Btree
@@ -500,11 +518,27 @@ int Node<T>::checkEmpty()
         return isEmpty;
 }
 
+//Function to find immediate successor
+template <typename T>
+typename Node<T>::Key* Btree<T>::successor(Node<T> *node,T *deletion)
+{
+        node->it1 = node->findMatch(deletion);
+        node = (*node->it1).rChild;
+        while(node->lChild != NULL)
+        {
+                node = node->lChild;
+        }
+        node->it1 = node->first.begin();
+        return &(*node->it1);
+}
+
 //Function to delete item from Btree
 template <typename T>
 void Btree<T>::deleteB(T *deletion)
 {
         int isEmpty = 0;
+        Node<T> *node;
+        typename Node<T>::Key *keyS;
 
         search(deletion);
         if(temporary->lChild == NULL)
@@ -512,6 +546,12 @@ void Btree<T>::deleteB(T *deletion)
                 cout << "Delete Leaf" << endl;
                 temporary->deleteLeaf(deletion);
                 checkMin(temporary);
+        }
+        else 
+        {
+                keyS = successor(temporary, deletion);          //functions to find immediate successor
+                //function to swap immediate successor and item to be deleted
+                //delete item now moved to leaf node
         }
 }
 
