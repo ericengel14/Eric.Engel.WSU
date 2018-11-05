@@ -1,4 +1,4 @@
-//Function to be passed as functino pointer to Btree
+//Function to be passed as function pointer to Btree
 
 //Compare Func to decide whether child is left or right child
 //Return -1 if left child 

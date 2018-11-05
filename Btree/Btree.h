@@ -36,6 +36,9 @@ public:
 
         list<Key> first;
 
+        int extra();
+        bool youngerBrother(T *element);
+        bool olderBrother(T *element);
         int checkEmpty();
         void deleteLeaf(T *deletion);
         Key* findMatch(T *search);
@@ -66,11 +69,14 @@ public:
         
         int (*compareFunction)(T*,T*);
 
+        void mergeOlder(Node<T> *node, Node<T> *parent);
+        void mergeYounger(Node<T> *node, Node<T> *parent);
+        void marriage(Node<T> *node);
         void setTemp(typename Node<T>::Key *keyD);
         void swap(typename Node<T>::Key *keyD, typename Node<T>::Key *keyS, T *deletion);
         typename Node<T>::Key* successor(Node<T> *node, T *deletion);
-        void theft();
-        bool caseJoint(Node<T> *node);
+        void theft(bool brother, Node<T> *node, Node<T> *parent);
+        int caseJoint(Node<T> *node);
         void checkMin(Node<T> *temp);
         void deleteB(T *deletion);
         void search(T *search);
@@ -162,7 +168,7 @@ int Node<T>::isMatch(T *search)
                 compare = compareFunc(search, &(*it1).data);
                 if(compare == 0)
                 {
-                        cout << "found element " << (*it1).data << endl;
+                        cout << endl << endl;
                         return compare;
                 }
         }
@@ -190,7 +196,7 @@ typename Node<T>::Key* Node<T>::findMatch(T *search)
 template <typename T>
 void Btree<T>::search(T *search)
 {
-        cout << "Searching for " << *search << endl;
+        //cout << "Searching for " << *search << endl;
         Node<T> *temp = root;
         int compare = 1;
 
@@ -445,60 +451,244 @@ void Btree<T>::insert(T *add)
 template <typename T>
 void Node<T>::deleteLeaf(T *deletion)
 {
+        cout << "Deleting element " << *deletion << endl;
         int compare = 1;
-        for(it1 = first.begin(); it1 != first.end(); it1++)
+        for(it1 = first.begin(); it1 != first.end(); ++it1)
         {
-                cout << "Deleting Leaf" << endl;
+                //cout << "Data = " << (*it1).data << endl;
                 compare = compareFunc(deletion, &(*it1).data);
-                cout << "it1.data = " << (*it1).data << endl;
                 if(compare == 0)
                 {
                         first.erase(it1);
+                        return;
                 }
         }
+        //cout << "Finished deleting leaf" << endl;
+}
+
+//function to check if current Node has an extra key
+template <typename T>
+int Node<T>::extra()
+{
+        int extra = 0;
+        int count = 0;
+
+        for(it1 = first.begin(); it1 != first.end(); ++it1, ++count){
+        }     //Counting how many elements are in the list
+
+        if(count > min)                         //If node has an extra key
+        {
+                extra = 1; 
+        }
+
+        return extra;
+}
+
+//Function to check if left sibling has an extra key to steal
+//returns a 0 if theft is possible from youngerBrother
+template <typename T>
+bool Node<T>::youngerBrother(T *element)
+{
+        //cout << "youngerBrother" << endl;
+        Node *node;
+        bool freeStuff = 0;
+        typename list<Key>::iterator it2;
+
+        it1 = iPosition(element);
+        it1--;
+        it1--;
+        node = (*it1).rChild;
+        
+        freeStuff = node->extra();                  //check if sibling has extra keys
+
+        return !freeStuff;
+}
+
+//Function to check if right sibling has an extra key
+//Returns a 1 if theft is possible from olderBrother
+template <typename T>
+bool Node<T>::olderBrother(T *element)
+{
+        //cout << "older Brother" << endl;
+        Node *node;
+        bool freeStuff = 0;
+
+        it1 = iPosition(element);
+        node = (*it1).rChild;
+        
+        freeStuff = node->extra();                  //check if sibling has extra keys
+
+        return freeStuff;
 }
 
 //Function to check if you can steal a key from neighbor node
+//Returns -1 if left sibling can be stolen from
+//Returns 1 if right sibling can be stolen from
+//Returns 0 if neither right or left sibling can be stolen from
 template <typename T>
-bool Btree<T>::caseJoint(Node<T> *node)
+int Btree<T>::caseJoint(Node<T> *node)
 {
-        Node<T> *parent = node->prev;
+        //cout << "casing the joint" << endl;
+        bool sibling;
+        int stealFrom = 0;
 
-        if(parent->lChild == node)
+        Node<T> *parent = node->prev;
+        for(parent->it1 = parent->first.begin(); parent->it1 != parent->first.end(); ++parent->it1){}
+        parent->it1--;
+        node->it1 = node->first.begin();
+
+        if(parent->lChild == node)              //check if node is left child so it does not have a left sibling
         {
-                //Function sibling to the right for extra keys 
+                //cout << "no left sibling" << endl;
+                sibling = parent->olderBrother(&(*node->it1).data);       //check if sibling to the right has an extra key
+                if (sibling == 1)
+                {
+                        stealFrom = 1;
+                        theft(sibling, node, parent);
+                }
         }
+        else if((*parent->it1).rChild == node)          //Node has no right siblings
+        {
+                //cout << "no right sibling" << endl;
+                sibling = parent->youngerBrother(&(*node->it1).data);
+                if(sibling == 0)
+                {
+                        stealFrom = 1;
+                        theft(sibling, node, parent);
+                }
+        }
+        else
+        {
+                //cout << "2 siblings" << endl;
+                sibling = parent->olderBrother(&(*node->it1).data);
+                if(sibling == 1)
+                {
+                        theft(sibling, node, parent);
+                        stealFrom = 1;
+                }
+                else
+                {
+                        sibling = parent->youngerBrother(&(*node->it1).data);
+                        //cout << "sibling = " << sibling << endl;
+                        if(sibling == 0)
+                        {
+                                stealFrom = 1;
+                                theft(sibling, node, parent);
+                        }
+                }
+        }
+        //cout << "Steal From = " << stealFrom << endl;
+        return stealFrom;
 }
 
 //Functino to steal key from neighbor node
+//Takes a bool argument 0 if younger brother 1 if older brother
 template <typename T>
-void Btree<T>::theft()
+void Btree<T>::theft(bool brother, Node<T> *node, Node<T> *parent)
 {
+        cout << "Stealing a node from sibling" << endl;
+        Node<T> *sibling;
+        typename Node<T>::Key *key = new typename Node<T>::Key;
 
+        if (brother == 1)
+        {
+                //cout << "Stealing from older brother" << endl;
+                node->it1 = node->first.begin();
+                parent->it1 = parent->iPosition(&(*node->it1).data);
+                key->data = ((*parent->it1).data);                     //Setting data of new key to equal parent data
+                sibling = (*parent->it1).rChild;
+
+                for(node->it1 = node->first.begin(); node->it1 != node->first.end(); ++node->it1){};    //Getting iterator to end of node
+                node->first.insert(node->it1, *key);             //Inserting new key at end of node with data from parent key
+
+                sibling->it1 = sibling->first.begin();
+                ((*parent->it1).data) = ((*sibling->it1).data);        //Setting parent data to equal first element of sibling
+                sibling->first.erase(sibling->it1);                                       //Deleting first element of sibling
+        } 
+}
+
+//Function to marge with right sibling
+template <typename T>
+void Btree<T>::mergeOlder(Node<T> *node, Node<T> *parent)
+{
+        cout << "Merging Nodes" << endl;
+        Node<T> *sibling;
+        typename Node<T>::Key *key = new typename Node<T>::Key;
+        typename list<typename Node<T>::Key>::iterator it2;
+
+        node->it1 = node->first.begin();
+        parent->it1 = parent->iPosition(&(*node->it1).data);
+        sibling = (*parent->it1).rChild;                        //Setting sibling to older brother
+
+        for(node->it1 = node->first.begin(); node->it1 != node->first.end(); ++node->it1){}     //set node iterator to end of node
+
+        key->data = (*parent->it1).data;                        //Set key data to parent data
+        node->first.insert(node->it1,*key);                      //Insert parent Key into node
+        parent->first.erase(parent->it1);                         //Remove the key in parent
+
+        for(sibling->it1 = sibling->first.begin(); sibling->it1 != sibling->first.end(); sibling->it1++)       //Iterate through each element in sibling
+        {
+                //node->it1++;
+                key->data = (*sibling->it1).data;               
+                node->first.insert(node->it1,*key);
+        }
+
+        it2 = sibling->first.end();
+        sibling->first.erase(sibling->it1, it2);         //erase all the keys in sibling
+}
+
+//Function to merge with left sibling if there is no left sibling
+template <typename T>
+void Btree<T>::mergeYounger(Node<T> *node, Node<T> *parent)
+{
+        //cout << "calling mergeYounger" << endl;
+        node->it1 = node->first.begin();
+        parent->it1 = parent->iPosition(&(*node->it1).data);
+        parent->it1--;
+        parent->it1--;
+
+        node = (*parent->it1).rChild;           //set node to point to younger sibling
+
+        mergeOlder(node, parent);               //Now call mergeOlder for the younger sibling
+}
+
+//Function to merge siblings into one family if no siblings have keys to share
+template <typename T>
+void Btree<T>::marriage(Node<T> *node)
+{
+        //cout << "Calling Marriage" << endl;
+        Node<T> *parent = node->prev;
+        
+        for(parent->it1 = parent->first.begin(); parent->it1 != parent->first.end(); ++parent->it1){}
+        parent->it1--;
+
+        if((*parent->it1).rChild == node)
+        {
+                mergeYounger(node, parent);
+        }
+        else
+        {
+                mergeOlder(node, parent);
+        }
 }
 
 //Function to perform check if Node is empty then call correct functino to fix problem
 template <typename T>
-void Btree<T>::checkMin(Node<T> *temp)
+void Btree<T>::checkMin(Node<T> *node)
 {
         int isEmpty = 0;
-        bool surveilance = 0;
+        int surveilance = 0;
 
-        isEmpty = temp->checkEmpty();
-        if(temp == root){}
+        isEmpty = node->checkEmpty();
+        if(node == root){}
         else if(isEmpty == 1)
         {
                 cout << "Node has too few elements" << endl;
-                surveilance = caseJoint(temp);
-                if(surveilance == 1)
+                surveilance = caseJoint(node);
+                if(surveilance == 0)
                 {
-                        //call function to steal key from neighbor node
+                        marriage(node);
                 }
-                else
-                {
-                        //call function to combine key with neighbor
-                }
-                //if not call function to combine with neighbor
         }
 }
 
@@ -574,7 +764,7 @@ void Btree<T>::deleteB(T *deletion)
         search(deletion);
         if(temporary->lChild == NULL)
         {
-                cout << "Delete Leaf" << endl;
+                //cout << "Delete Leaf" << endl;
                 temporary->deleteLeaf(deletion);
                 checkMin(temporary);
         }

@@ -1,6 +1,17 @@
 /*
-        Header File containing class implementation of templated Btree
+        Eric Engel
+        Cpts223
+        Btree assignment
 
+        driver program that takes in the BLOCK_SIZE during compile time and uses it to figure out the max number of keys that can 
+        fit into that size, and passes that along with a function pointer for the comparison function to the Btree constructor.
+
+        compile using 
+        c++ Btree Btree.cpp -D BLOCK_SIZE=20    
+
+        Driver program is set up to show the insertion of 15 items and then deletion of 3 items using the 
+        block size of 20. Program will owrk correctly with other Block Sizes but the driver program
+        will not demonstrate this.
 */
 
 #include <iostream>
@@ -53,22 +64,39 @@ int main(int argc, char* argv[])
         tree.insert(&n);
         tree.insert(&o);
 
+        cout << "Left most Node" << endl;
+        tree.search(&m);
+        cout << "Right node off of 4" << endl;
+        tree.search(&i);
+        cout << "Right node off of 8" << endl;
+        tree.search(&d);
+        cout << "Right node off of 40" << endl;
+        tree.search(&f);
+
+        tree.deleteB(&n);
+        tree.deleteB(&o);
         tree.deleteB(&m);
 
-        tree.search(&a);
-        tree.search(&b);
-        tree.search(&c);
+        cout << endl;
+        cout << "After Deletions" << endl;
+
+        //tree.search(&a);
+        //tree.search(&b);
+        //tree.search(&c);
+        cout << "Left most Node" << endl;
         tree.search(&d);
-        tree.search(&e);
+        //tree.search(&e);
+        cout << "Right node off of 8" << endl;
         tree.search(&f);
-        tree.search(&g);
-        tree.search(&h);
+        //tree.search(&g);
+        //tree.search(&h);
+        cout << "Right node off of 40" << endl;
         tree.search(&i);
-        tree.search(&j);
-        tree.search(&k);
-        tree.search(&l);
-        tree.search(&m);
-        tree.search(&n);
+        //tree.search(&j);
+        //tree.search(&k);
+        //tree.search(&l);
+        //tree.search(&m);
+        //tree.search(&n);
         //tree.search(&o);
 
 
